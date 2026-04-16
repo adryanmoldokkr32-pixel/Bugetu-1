@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BugetSmart – Gestionare Buget Personal</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #6C63FF;
+            --primary-dark: #5A52D5;
+            --success: #2ECC71;
+            --danger: #E74C3C;
+            --warning: #F39C12;
+            --bg: #0F0F1A;
+            --bg-card: #1A1A2E;
+            --bg-input: #16213E;
+            --text: #E8E8F0;
+            --text-muted: #8888AA;
+            --border: #2A2A4A;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ── HEADER ── */
+        header {
+            background: linear-gradient(135deg, #1A1A2E 0%, #16213E 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+
+        .logo {
+            font-size: 1.4rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #6C63FF, #A78BFA);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .period-tabs {
+            display: flex;
+            background: var(--bg-input);
+            border-radius: 10px;
+            padding: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .period-tab {
+            padding: 6px 16px;
+            border-radius: 7px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .period-tab.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* ── MAIN ── */
+        main {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        /* ── CARDS ── */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.2rem;
+        }
+
+        .card-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .card-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .icon-income  { background: rgba(46,204,113,0.15); }
+        .icon-expense { background: rgba(231,76,60,0.15); }
+        .icon-balance { background: rgba(108,99,255,0.15); }
+        .icon-savings { background: rgba(243,156,18,0.15); }
+
+        .card-value {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 0.3rem;
+        }
+
+        .card-value.income  { color: var(--success); }
+        .card-value.expense { color: var(--danger); }
+        .card-value.balance { color: var(--primary); }
+        .card-value.savings { color: var(--warning); }
+
+        .card-sub {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* ── FULL-WIDTH ── */
+        .col-full  { grid-column: 1 / -1; }
+        .col-2     { grid-column: span 2; }
+
+        /* ── PROGRESS BAR ── */
+        .progress-wrap {
+            margin-top: 0.8rem;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: var(--bg-input);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 99px;
+            transition: width 0.6s ease;
+        }
+
+        /* ── FORM ── */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .form-group.full { grid-column: 1 / -1; }
+
+        label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        input, select {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: var(--text);
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+        }
+
+        select option { background: var(--bg-input); }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+
+        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+
+        /* ── TRANSACTIONS LIST ── */
+        .tx-list { display: flex; flex-direction: column; gap: 0.6rem; max-height: 420px; overflow-y: auto; padding-right: 4px; }
+
+        .tx-list::-webkit-scrollbar { width: 4px; }
+        .tx-list::-webkit-scrollbar-track { background: transparent; }
+        .tx-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+        .tx-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.85rem 1rem;
+            background: var(--bg-input);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            transition: border-color 0.2s;
+        }
+
+        .tx-item:hover { border-color: var(--primary); }
+
+        .tx-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .tx-info { flex: 1; min-width: 0; }
+
+        .tx-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tx-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .tx-amount {
+            font-size: 0.95rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .tx-amount.inc { color: var(--success); }
+        .tx-amount.exp { color: var(--danger); }
+
+        .tx-delete {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 2px 6px;
+            border-radius: 6px;
+            transition: all 0.15s;
+            flex-shrink: 0;
+        }
+
+        .tx-delete:hover { color: var(--danger); background: rgba(231,76,60,0.1); }
+
+        /* ── CATEGORY CHART ── */
+        .cat-list { display: flex; flex-direction: column; gap: 0.8rem; }
+
+        .cat-item { }
+
+        .cat-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .cat-name {
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .cat-pct {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        /* ── BUDGET GOALS ── */
+        .goals-list { display: flex; flex-direction: column; gap: 1rem; }
+
+        .goal-item {
+            padding: 1rem;
+            background: var(--bg-input);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .goal-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.6rem;
+        }
+
+        .goal-name { font-size: 0.9rem; font-weight: 600; }
+        .goal-amounts { font-size: 0.8rem; color: var(--text-muted); }
+
+        /* ── SUMMARY TABLE ── */
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+
+        .summary-table th {
+            text-align: left;
+            padding: 10px 14px;
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .summary-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(42,42,74,0.5);
+        }
+
+        .summary-table tr:last-child td { border-bottom: none; }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-inc { background: rgba(46,204,113,0.15); color: var(--success); }
+        .badge-exp { background: rgba(231,76,60,0.15); color: var(--danger); }
+
+        /* ── EMPTY STATE ── */
+        .empty {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .empty-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+
+        /* ── MINI CANVAS CHART ── */
+        canvas { border-radius: 12px; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 900px) {
+            main { grid-template-columns: 1fr 1fr; }
+            .col-2 { grid-column: 1 / -1; }
+        }
+
+        @media (max-width: 580px) {
+            main { grid-template-columns: 1fr; padding: 1rem; }
+            .col-full, .col-2 { grid-column: 1 / -1; }
+            header { padding: 0 1rem; }
+            .period-tabs { display: none; }
+        }
+
+        /* ── TOAST ── */
+        #toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--primary);
+            color: white;
+            padding: 0.75rem 1.2rem;
+            border-radius: 12px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 200;
+        }
+
+        #toast.show { transform: translateY(0); opacity: 1; }
+
+        /* ── TOGGLE INCOME/EXPENSE ── */
+        .type-toggle {
+            display: flex;
+            background: var(--bg-input);
+            border-radius: 10px;
+            padding: 4px;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border);
+        }
+
+        .type-btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 7px;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .type-btn.active-inc { background: rgba(46,204,113,0.2); color: var(--success); }
+        .type-btn.active-exp { background: rgba(231,76,60,0.2); color: var(--danger); }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">💰 BugetSmart</div>
+    <div class="header-right">
+        <div class="period-tabs">
+            <button class="period-tab active" onclick="setPeriod('zilnic')">Zilnic</button>
+            <button class="period-tab" onclick="setPeriod('saptamanal')">Săptămânal</button>
+            <button class="period-tab" onclick="setPeriod('lunar')">Lunar</button>
+        </div>
+        <span id="period-label" style="font-size:0.82rem;color:var(--text-muted);"></span>
+    </div>
+</header>
+
+<main>
+    <!-- STAT CARDS -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">Venituri</span>
+            <div class="card-icon icon-income">💚</div>
+        </div>
+        <div class="card-value income" id="stat-income">0,00 RON</div>
+        <div class="card-sub" id="stat-income-count">0 tranzacții</div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">Cheltuieli</span>
+            <div class="card-icon icon-expense">❤️</div>
+        </div>
+        <div class="card-value expense" id="stat-expense">0,00 RON</div>
+        <div class="card-sub" id="stat-expense-count">0 tranzacții</div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">Sold</span>
+            <div class="card-icon icon-balance">💜</div>
+        </div>
+        <div class="card-value balance" id="stat-balance">0,00 RON</div>
+        <div class="progress-wrap">
+            <div class="progress-label">
+                <span>Economii</span>
+                <span id="savings-pct">0%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="savings-bar" style="width:0%;background:var(--primary)"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD TRANSACTION -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">Adaugă tranzacție</span>
+        </div>
+        <div class="type-toggle">
+            <button class="type-btn active-inc" id="btn-inc" onclick="setType('income')">+ Venit</button>
+            <button class="type-btn" id="btn-exp" onclick="setType('expense')">– Cheltuială</button>
+        </div>
+        <div class="form-grid">
+            <div class="form-group full">
+                <label>Descriere</label>
+                <input type="text" id="tx-desc" placeholder="ex: Salariu, Cumpărături…">
+            </div>
+            <div class="form-group">
+                <label>Sumă (RON)</label>
+                <input type="number" id="tx-amount" placeholder="0.00" min="0" step="0.01">
+            </div>
+            <div class="form-group">
+                <label>Categorie</label>
+                <select id="tx-cat">
+                    <option value="Salariu">💼 Salariu</option>
+                    <option value="Freelance">💻 Freelance</option>
+                    <option value="Investiții">📈 Investiții</option>
+                    <option value="Alimentație">🛒 Alimentație</option>
+                    <option value="Transport">🚗 Transport</option>
+                    <option value="Utilități">🔌 Utilități</option>
+                    <option value="Sănătate">🏥 Sănătate</option>
+                    <option value="Divertisment">🎬 Divertisment</option>
+                    <option value="Educație">📚 Educație</option>
+                    <option value="Îmbrăcăminte">👗 Îmbrăcăminte</option>
+                    <option value="Altele">📦 Altele</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Data</label>
+                <input type="date" id="tx-date">
+            </div>
+            <div class="form-group">
+                <label>Perioadă</label>
+                <select id="tx-period">
+                    <option value="zilnic">Zilnic</option>
+                    <option value="saptamanal">Săptămânal</option>
+                    <option value="lunar" selected>Lunar</option>
+                </select>
+            </div>
+        </div>
+        <button class="btn btn-primary" onclick="addTransaction()">✚ Adaugă tranzacție</button>
+    </div>
+
+    <!-- TRANSACTIONS LIST -->
+    <div class="card col-2">
+        <div class="card-header">
+            <span class="card-title">Tranzacții recente</span>
+            <span id="tx-period-display" style="font-size:0.8rem;color:var(--text-muted)"></span>
+        </div>
+        <div class="tx-list" id="tx-list">
+            <div class="empty">
+                <div class="empty-icon">📋</div>
+                Nicio tranzacție încă. Adaugă prima!
+            </div>
+        </div>
+    </div>
+
+    <!-- CHELTUIELI PE CATEGORII -->
+    <div class="card col-2">
+        <div class="card-header">
+            <span class="card-title">Cheltuieli pe categorii</span>
+        </div>
+        <div class="cat-list" id="cat-list">
+            <div class="empty"><div class="empty-icon">📊</div>Nicio cheltuială</div>
+        </div>
+    </div>
+
+    <!-- GRAFIC -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">Evoluție</span>
+        </div>
+        <canvas id="chart" width="340" height="200"></canvas>
+    </div>
+
+    <!-- OBIECTIVE BUGET -->
+    <div class="card col-full">
+        <div class="card-header">
+            <span class="card-title">Obiective buget lunar</span>
+            <button class="btn btn-primary" style="width:auto;margin:0;padding:6px 14px;font-size:0.8rem" onclick="openGoalModal()">+ Obiectiv</button>
+        </div>
+        <div class="goals-list" id="goals-list">
+            <div class="empty"><div class="empty-icon">🎯</div>Niciun obiectiv setat</div>
+        </div>
+    </div>
+
+    <!-- REZUMAT TABEL -->
+    <div class="card col-full">
+        <div class="card-header">
+            <span class="card-title">Rezumat detaliat</span>
+        </div>
+        <table class="summary-table">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Descriere</th>
+                    <th>Categorie</th>
+                    <th>Perioadă</th>
+                    <th>Tip</th>
+                    <th>Sumă</th>
+                </tr>
+            </thead>
+            <tbody id="summary-body">
+                <tr><td colspan="6" class="empty">Nicio tranzacție</td></tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- GOAL MODAL -->
+<div id="goal-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:150;display:none;align-items:center;justify-content:center;">
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:1.8rem;width:360px;max-width:90vw;">
+        <h3 style="margin-bottom:1rem;font-size:1rem;">Adaugă obiectiv buget</h3>
+        <div class="form-group" style="margin-bottom:1rem;">
+            <label>Nume obiectiv</label>
+            <input type="text" id="goal-name" placeholder="ex: Vacanță, Fond urgențe…">
+        </div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Limită (RON)</label>
+                <input type="number" id="goal-limit" placeholder="0">
+            </div>
+            <div class="form-group">
+                <label>Categorie</label>
+                <select id="goal-cat">
+                    <option>Alimentație</option><option>Transport</option>
+                    <option>Utilități</option><option>Sănătate</option>
+                    <option>Divertisment</option><option>Educație</option>
+                    <option>Îmbrăcăminte</option><option>Altele</option>
+                </select>
+            </div>
+        </div>
+        <div style="display:flex;gap:0.8rem;margin-top:1.2rem;">
+            <button class="btn btn-primary" style="margin:0" onclick="addGoal()">Salvează</button>
+            <button class="btn" style="background:var(--bg-input);color:var(--text);flex:1;margin:0" onclick="closeGoalModal()">Anulează</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ── STATE ──
+    let transactions = JSON.parse(localStorage.getItem('bsmart_tx') || '[]');
+    let goals = JSON.parse(localStorage.getItem('bsmart_goals') || '[]');
+    let currentPeriod = 'lunar';
+    let currentType = 'income';
+
+    const CAT_COLORS = {
+        'Salariu':'#2ECC71','Freelance':'#1ABC9C','Investiții':'#27AE60',
+        'Alimentație':'#E74C3C','Transport':'#E67E22','Utilități':'#F39C12',
+        'Sănătate':'#9B59B6','Divertisment':'#3498DB','Educație':'#2980B9',
+        'Îmbrăcăminte':'#E91E63','Altele':'#607D8B'
+    };
+
+    const CAT_ICONS = {
+        'Salariu':'💼','Freelance':'💻','Investiții':'📈',
+        'Alimentație':'🛒','Transport':'🚗','Utilități':'🔌',
+        'Sănătate':'🏥','Divertisment':'🎬','Educație':'📚',
+        'Îmbrăcăminte':'👗','Altele':'📦'
+    };
+
+    const PERIOD_LABELS = { zilnic:'Astăzi', saptamanal:'Această săptămână', lunar:'Luna curentă' };
+
+    // ── INIT ──
+    document.getElementById('tx-date').value = new Date().toISOString().split('T')[0];
+    setPeriod('lunar');
+
+    // ── PERIOD ──
+    function setPeriod(p) {
+        currentPeriod = p;
+        document.querySelectorAll('.period-tab').forEach(t => t.classList.toggle('active', t.textContent.toLowerCase().includes(p.slice(0,3))));
+        document.getElementById('tx-period-display').textContent = PERIOD_LABELS[p];
+        render();
+    }
+
+    function setType(t) {
+        currentType = t;
+        const bi = document.getElementById('btn-inc');
+        const be = document.getElementById('btn-exp');
+        if (t === 'income') {
+            bi.className = 'type-btn active-inc';
+            be.className = 'type-btn';
+        } else {
+            bi.className = 'type-btn';
+            be.className = 'type-btn active-exp';
+        }
+    }
+
+    // ── FILTER BY PERIOD ──
+    function filterTx(period) {
+        const now = new Date();
+        return transactions.filter(tx => {
+            if (tx.period !== period) return false;
+            const d = new Date(tx.date);
+            if (period === 'zilnic') return d.toDateString() === now.toDateString();
+            if (period === 'saptamanal') {
+                const start = new Date(now); start.setDate(now.getDate() - now.getDay());
+                const end   = new Date(start); end.setDate(start.getDate() + 6);
+                return d >= start && d <= end;
+            }
+            if (period === 'lunar') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+            return true;
+        });
+    }
+
+    // ── ADD TX ──
+    function addTransaction() {
+        const desc   = document.getElementById('tx-desc').value.trim();
+        const amount = parseFloat(document.getElementById('tx-amount').value);
+        const cat    = document.getElementById('tx-cat').value;
+        const date   = document.getElementById('tx-date').value;
+        const period = document.getElementById('tx-period').value;
+
+        if (!desc || !amount || amount <= 0 || !date) { toast('⚠️ Completează toate câmpurile!'); return; }
+
+        transactions.unshift({ id: Date.now(), desc, amount, cat, date, period, type: currentType });
+        save();
+        render();
+
+        document.getElementById('tx-desc').value = '';
+        document.getElementById('tx-amount').value = '';
+        toast(currentType === 'income' ? '✅ Venit adăugat!' : '✅ Cheltuială adăugată!');
+    }
+
+    function deleteTx(id) {
+        transactions = transactions.filter(t => t.id !== id);
+        save();
+        render();
+    }
+
+    // ── GOALS ──
+    function openGoalModal()  { document.getElementById('goal-modal').style.display = 'flex'; }
+    function closeGoalModal() { document.getElementById('goal-modal').style.display = 'none'; }
+
+    function addGoal() {
+        const name  = document.getElementById('goal-name').value.trim();
+        const limit = parseFloat(document.getElementById('goal-limit').value);
+        const cat   = document.getElementById('goal-cat').value;
+        if (!name || !limit || limit <= 0) { toast('⚠️ Completează obiectivul!'); return; }
+        goals.push({ id: Date.now(), name, limit, cat });
+        save(); renderGoals(); closeGoalModal();
+        toast('🎯 Obiectiv adăugat!');
+    }
+
+    function deleteGoal(id) {
+        goals = goals.filter(g => g.id !== id);
+        save(); renderGoals();
+    }
+
+    // ── SAVE ──
+    function save() {
+        localStorage.setItem('bsmart_tx', JSON.stringify(transactions));
+        localStorage.setItem('bsmart_goals', JSON.stringify(goals));
+    }
+
+    // ── FORMAT ──
+    function fmt(n) {
+        return n.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' RON';
+    }
+
+    function fmtDate(d) {
+        return new Date(d).toLocaleDateString('ro-RO', { day:'2-digit', month:'short', year:'numeric' });
+    }
+
+    // ── RENDER ──
+    function render() {
+        const txs = filterTx(currentPeriod);
+        const income  = txs.filter(t => t.type === 'income').reduce((s,t) => s + t.amount, 0);
+        const expense = txs.filter(t => t.type === 'expense').reduce((s,t) => s + t.amount, 0);
+        const balance = income - expense;
+        const savPct  = income > 0 ? Math.round((balance / income) * 100) : 0;
+
+        document.getElementById('stat-income').textContent  = fmt(income);
+        document.getElementById('stat-expense').textContent = fmt(expense);
+        document.getElementById('stat-balance').textContent = fmt(balance);
+        document.getElementById('stat-income-count').textContent  = txs.filter(t=>t.type==='income').length + ' tranzacții';
+        document.getElementById('stat-expense-count').textContent = txs.filter(t=>t.type==='expense').length + ' tranzacții';
+        document.getElementById('savings-pct').textContent = Math.max(0, savPct) + '%';
+        document.getElementById('savings-bar').style.width = Math.max(0, Math.min(100, savPct)) + '%';
+        document.getElementById('savings-bar').style.background = savPct >= 20 ? 'var(--success)' : savPct > 0 ? 'var(--warning)' : 'var(--danger)';
+
+        renderTxList(txs);
+        renderCategories(txs);
+        renderSummary();
+        renderGoals();
+        drawChart();
+    }
+
+    function renderTxList(txs) {
+        const el = document.getElementById('tx-list');
+        if (!txs.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div>Nicio tranzacție în această perioadă</div>'; return; }
+        el.innerHTML = txs.map(t => {
+            const color = t.type === 'income' ? 'rgba(46,204,113,0.15)' : 'rgba(231,76,60,0.15)';
+            return `<div class="tx-item">
+                <div class="tx-icon" style="background:${color}">${CAT_ICONS[t.cat] || '💰'}</div>
+                <div class="tx-info">
+                    <div class="tx-name">${esc(t.desc)}</div>
+                    <div class="tx-meta">${t.cat} · ${fmtDate(t.date)} · ${t.period}</div>
+                </div>
+                <div class="tx-amount ${t.type === 'income' ? 'inc' : 'exp'}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</div>
+                <button class="tx-delete" onclick="deleteTx(${t.id})">✕</button>
+            </div>`;
+        }).join('');
+    }
+
+    function renderCategories(txs) {
+        const expenses = txs.filter(t => t.type === 'expense');
+        const total    = expenses.reduce((s, t) => s + t.amount, 0);
+        const byCat    = {};
+        expenses.forEach(t => byCat[t.cat] = (byCat[t.cat] || 0) + t.amount);
+        const sorted   = Object.entries(byCat).sort((a,b) => b[1]-a[1]);
+        const el = document.getElementById('cat-list');
+        if (!sorted.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">📊</div>Nicio cheltuială</div>'; return; }
+        el.innerHTML = sorted.map(([cat, amt]) => {
+            const pct   = total > 0 ? Math.round((amt / total) * 100) : 0;
+            const color = CAT_COLORS[cat] || '#8888AA';
+            return `<div class="cat-item">
+                <div class="cat-label">
+                    <span class="cat-name">${CAT_ICONS[cat]||'📦'} ${cat}</span>
+                    <span class="cat-pct">${fmt(amt)} · ${pct}%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width:${pct}%;background:${color}"></div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function renderSummary() {
+        const el = document.getElementById('summary-body');
+        if (!transactions.length) { el.innerHTML = '<tr><td colspan="6" class="empty">Nicio tranzacție</td></tr>'; return; }
+        const sorted = [...transactions].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 50);
+        el.innerHTML = sorted.map(t => `
+            <tr>
+                <td>${fmtDate(t.date)}</td>
+                <td>${esc(t.desc)}</td>
+                <td>${CAT_ICONS[t.cat]||''} ${t.cat}</td>
+                <td style="color:var(--text-muted);font-size:0.8rem">${t.period}</td>
+                <td><span class="badge ${t.type==='income'?'badge-inc':'badge-exp'}">${t.type==='income'?'▲ Venit':'▼ Cheltuială'}</span></td>
+                <td class="${t.type==='income'?'tx-amount inc':'tx-amount exp'}" style="font-size:0.88rem">${t.type==='income'?'+':'-'}${fmt(t.amount)}</td>
+            </tr>`).join('');
+    }
+
+    function renderGoals() {
+        const el = document.getElementById('goals-list');
+        const lunarTx = filterTx('lunar');
+        if (!goals.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">🎯</div>Niciun obiectiv setat</div>'; return; }
+        el.innerHTML = goals.map(g => {
+            const spent = lunarTx.filter(t => t.type==='expense' && t.cat===g.cat).reduce((s,t)=>s+t.amount,0);
+            const pct   = Math.min(100, Math.round((spent / g.limit) * 100));
+            const over  = spent > g.limit;
+            const color = over ? 'var(--danger)' : pct > 75 ? 'var(--warning)' : 'var(--success)';
+            return `<div class="goal-item">
+                <div class="goal-header">
+                    <span class="goal-name">${g.name} <span style="font-size:0.8rem;color:var(--text-muted)">(${g.cat})</span></span>
+                    <div style="display:flex;gap:0.8rem;align-items:center">
+                        <span class="goal-amounts">${fmt(spent)} / ${fmt(g.limit)}</span>
+                        <button class="tx-delete" onclick="deleteGoal(${g.id})">✕</button>
+                    </div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width:${pct}%;background:${color}"></div>
+                </div>
+                ${over ? `<div style="font-size:0.75rem;color:var(--danger);margin-top:4px">⚠️ Limită depășită cu ${fmt(spent - g.limit)}</div>` : ''}
+            </div>`;
+        }).join('');
+    }
+
+    // ── CHART ──
+    function drawChart() {
+        const canvas = document.getElementById('chart');
+        const ctx    = canvas.getContext('2d');
+        const W = canvas.width, H = canvas.height;
+        ctx.clearRect(0, 0, W, H);
+
+        // Get last 7 days data
+        const days = [];
+        const now  = new Date();
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date(now); d.setDate(now.getDate() - i);
+            const ds = d.toISOString().split('T')[0];
+            const dayTx = transactions.filter(t => t.date === ds);
+            days.push({
+                label: d.toLocaleDateString('ro-RO', { weekday:'short' }),
+                income:  dayTx.filter(t => t.type==='income').reduce((s,t)=>s+t.amount,0),
+                expense: dayTx.filter(t => t.type==='expense').reduce((s,t)=>s+t.amount,0)
+            });
+        }
+
+        const maxVal = Math.max(...days.map(d => Math.max(d.income, d.expense)), 1);
+        const pad    = { top:20, right:20, bottom:40, left:60 };
+        const cW     = W - pad.left - pad.right;
+        const cH     = H - pad.top  - pad.bottom;
+        const barW   = (cW / days.length) * 0.35;
+
+        // Grid lines
+        ctx.strokeStyle = 'rgba(42,42,74,0.8)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 4; i++) {
+            const y = pad.top + (cH / 4) * i;
+            ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + cW, y); ctx.stroke();
+            ctx.fillStyle = 'rgba(136,136,170,0.7)';
+            ctx.font = '10px Segoe UI';
+            ctx.textAlign = 'right';
+            ctx.fillText(Math.round(maxVal - (maxVal/4)*i), pad.left - 6, y + 4);
+        }
+
+        // Bars
+        days.forEach((d, i) => {
+            const x = pad.left + (cW / days.length) * i + (cW / days.length) * 0.15;
+
+            // Income bar
+            const ih = (d.income / maxVal) * cH;
+            const iy = pad.top + cH - ih;
+            ctx.fillStyle = 'rgba(46,204,113,0.85)';
+            roundRect(ctx, x, iy, barW, ih, 3);
+            ctx.fill();
+
+            // Expense bar
+            const eh = (d.expense / maxVal) * cH;
+            const ey = pad.top + cH - eh;
+            ctx.fillStyle = 'rgba(231,76,60,0.85)';
+            roundRect(ctx, x + barW + 2, ey, barW, eh, 3);
+            ctx.fill();
+
+            // Label
+            ctx.fillStyle = 'rgba(136,136,170,0.9)';
+            ctx.font = '11px Segoe UI';
+            ctx.textAlign = 'center';
+            ctx.fillText(d.label, x + barW, H - pad.bottom + 16);
+        });
+
+        // Legend
+        ctx.fillStyle = 'rgba(46,204,113,0.9)';
+        ctx.fillRect(pad.left, H - 14, 10, 10);
+        ctx.fillStyle = 'rgba(136,136,170,0.9)';
+        ctx.font = '10px Segoe UI';
+        ctx.textAlign = 'left';
+        ctx.fillText('Venituri', pad.left + 14, H - 6);
+
+        ctx.fillStyle = 'rgba(231,76,60,0.9)';
+        ctx.fillRect(pad.left + 80, H - 14, 10, 10);
+        ctx.fillStyle = 'rgba(136,136,170,0.9)';
+        ctx.fillText('Cheltuieli', pad.left + 94, H - 6);
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+        if (h < 1) return;
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h);
+        ctx.lineTo(x, y + h);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+    }
+
+    function esc(s) {
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function toast(msg) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 2500);
+    }
+</script>
+</body>
+</html>
